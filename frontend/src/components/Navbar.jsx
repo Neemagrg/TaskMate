@@ -30,7 +30,7 @@ function Navbar() {
 
                     <Link to="/tasks"> Tasks </Link>
 
-                    <Link to="/tasks/add"> Add My Task </Link>
+                    <Link to="/tasks/add"> Add Task </Link>
 
                     <span className="username"> {user?.name} </span>
 
