@@ -129,7 +129,7 @@ function AddTask() {
                         <option value="Completed"> Completed </option>
                     </select>
 
-                    <label> Due Date </label>
+                    <label> Due To Date </label>
                     <input
                         type="date"
                         name="due_date"
