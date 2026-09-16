@@ -31,7 +31,7 @@ function Navbar() {
                         isActive ? "nav-link active" : "nav-link"
                     }
                 >
-                    Tasks
+                    My Tasks
                 </NavLink>
 
                 <button onClick={handleLogout} className="logout-btn">
