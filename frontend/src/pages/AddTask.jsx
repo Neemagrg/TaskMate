@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/api";
 
 function AddTask() {
 
     const navigate = useNavigate();
-
-    const user = JSON.parse(
-        localStorage.getItem("currentUser")
-    );
 
     const [form, setForm] = useState({
         title: "",
@@ -18,47 +15,78 @@ function AddTask() {
         due_date: "",
     });
 
-    const [error, setError] = useState("");
+    const [error, setError] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
 
     const handleChange = (e) => {
 
         setForm({
             ...form,
-            [e.target.name]: e.target.value,
+            [e.target.name]:
+                e.target.value,
         });
 
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
 
         e.preventDefault();
 
         setError("");
 
         if (!form.title.trim()) {
-            setError("Please enter a task title.");
+            setError(
+                "Please enter a task title."
+            );
             return;
         }
 
-        const allTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
 
-        const newTask = {
-            id: Date.now(),
-            userId: user.id,
-            title: form.title,
-            description: form.description,
-            category: form.category,
-            priority: form.priority,
-            status: form.status,
-            due_date: form.due_date,
-            createdAt: new Date().toISOString(),
-        };
+            setLoading(true);
 
-        allTasks.push(newTask);
+            await api.post(
+                "/tasks",
+                form
+            );
 
-        localStorage.setItem( "tasks", JSON.stringify(allTasks) );
+            navigate("/tasks");
 
-        navigate("/tasks");
+        } catch (error) {
+
+            console.error(error);
+
+            if (
+                error.response?.data?.errors
+            ) {
+
+                const errors =
+                    error.response.data.errors;
+
+                const firstError =
+                    Object.values(errors)[0]?.[0];
+
+                setError(
+                    firstError ||
+                    "Unable to create task."
+                );
+
+            } else {
+
+                setError(
+                    "Unable to create task."
+                );
+
+            }
+
+        } finally {
+
+            setLoading(false);
+
+        }
     };
 
     return (
@@ -66,7 +94,9 @@ function AddTask() {
 
             <div className="form-container">
 
-                <h1> Add New Task </h1>
+                <h1>
+                    Add New Task
+                </h1>
 
                 {error && (
                     <div className="error">
@@ -79,7 +109,10 @@ function AddTask() {
                     className="task-form"
                 >
 
-                    <label> Task Title </label>
+                    <label>
+                        Task Title
+                    </label>
+
                     <input
                         type="text"
                         name="title"
@@ -89,7 +122,10 @@ function AddTask() {
                         required
                     />
 
-                    <label> Description </label>
+                    <label>
+                        Description
+                    </label>
+
                     <textarea
                         name="description"
                         value={form.description}
@@ -98,7 +134,10 @@ function AddTask() {
                         rows="5"
                     />
 
-                    <label> Category </label>
+                    <label>
+                        Category
+                    </label>
+
                     <input
                         type="text"
                         name="category"
@@ -107,29 +146,58 @@ function AddTask() {
                         placeholder="e.g. Study, Work, Personal"
                     />
 
-                    <label> Priority </label>
+                    <label>
+                        Priority
+                    </label>
+
                     <select
                         name="priority"
                         value={form.priority}
                         onChange={handleChange}
                     >
-                        <option value="Low"> Low </option>
-                        <option value="Medium"> Medium </option>
-                        <option value="High"> High </option>
+
+                        <option value="Low">
+                            Low
+                        </option>
+
+                        <option value="Medium">
+                            Medium
+                        </option>
+
+                        <option value="High">
+                            High
+                        </option>
+
                     </select>
 
-                    <label> Status </label>
+                    <label>
+                        Status
+                    </label>
+
                     <select
                         name="status"
                         value={form.status}
                         onChange={handleChange}
                     >
-                        <option value="Pending"> Pending </option>
-                        <option value="In Progress"> In Progress </option>
-                        <option value="Completed"> Completed </option>
+
+                        <option value="Pending">
+                            Pending
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Completed">
+                            Completed
+                        </option>
+
                     </select>
 
-                    <label> Due Date </label>
+                    <label>
+                        Due Date
+                    </label>
+
                     <input
                         type="date"
                         name="due_date"
@@ -141,8 +209,12 @@ function AddTask() {
 
                         <button
                             type="submit"
-                            className="primary-btn">
-                            Create Task
+                            className="primary-btn"
+                            disabled={loading}
+                        >
+                            {loading
+                                ? "Creating..."
+                                : "Create Task"}
                         </button>
 
                         <button
