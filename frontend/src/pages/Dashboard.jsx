@@ -1,44 +1,85 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../api/api";
 
 function Dashboard() {
 
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] =
+        useState([]);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
 
     const user = JSON.parse(
         localStorage.getItem("currentUser")
     );
 
     useEffect(() => {
+
         loadTasks();
+
     }, []);
 
-    const loadTasks = () => {
+    const loadTasks = async () => {
 
-        const allTasks =
-            JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
 
-        // Only show this user's tasks
-        const userTasks = allTasks.filter(
-            (task) => task.userId === user?.id
-        );
+            const response =
+                await api.get("/tasks");
 
-        setTasks(userTasks);
+            setTasks(
+                response.data.tasks
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            setError(
+                "Unable to load dashboard data."
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
     };
 
-    const totalTasks = tasks.length;
+    const totalTasks =
+        tasks.length;
 
-    const completedTasks = tasks.filter(
-        (task) => task.status === "Completed"
-    ).length;
+    const completedTasks =
+        tasks.filter(
+            (task) =>
+                task.status === "Completed"
+        ).length;
 
-    const pendingTasks = tasks.filter(
-        (task) => task.status === "Pending"
-    ).length;
+    const pendingTasks =
+        tasks.filter(
+            (task) =>
+                task.status === "Pending"
+        ).length;
 
-    const inProgressTasks = tasks.filter(
-        (task) => task.status === "In Progress"
-    ).length;
+    const inProgressTasks =
+        tasks.filter(
+            (task) =>
+                task.status === "In Progress"
+        ).length;
+
+    if (loading) {
+
+        return (
+            <div className="page-container">
+                <h2>
+                    Loading dashboard...
+                </h2>
+            </div>
+        );
+    }
 
     return (
         <div className="page-container">
@@ -46,6 +87,7 @@ function Dashboard() {
             <div className="page-header">
 
                 <div>
+
                     <h1>
                         Welcome, {user?.name}
                     </h1>
@@ -53,6 +95,7 @@ function Dashboard() {
                     <p>
                         Here's your task overview.
                     </p>
+
                 </div>
 
                 <Link
@@ -64,45 +107,63 @@ function Dashboard() {
 
             </div>
 
-            {/* Statistics */}
+            {error && (
+                <div className="error">
+                    {error}
+                </div>
+            )}
 
             <div className="stats">
 
-    <div className="stat-card total-card">
-        <h3>Total Tasks</h3>
+                <div className="stat-card total-card">
 
-        <strong>
-            {totalTasks}
-        </strong>
-    </div>
+                    <h3>
+                        Total Tasks
+                    </h3>
 
-    <div className="stat-card completed-card">
-        <h3>Completed</h3>
+                    <strong>
+                        {totalTasks}
+                    </strong>
 
-        <strong>
-            {completedTasks}
-        </strong>
-    </div>
+                </div>
 
-    <div className="stat-card pending-card">
-        <h3>Pending</h3>
+                <div className="stat-card completed-card">
 
-        <strong>
-            {pendingTasks}
-        </strong>
-    </div>
+                    <h3>
+                        Completed
+                    </h3>
 
-    <div className="stat-card progress-card">
-        <h3>In Progress</h3>
+                    <strong>
+                        {completedTasks}
+                    </strong>
 
-        <strong>
-            {inProgressTasks}
-        </strong>
-    </div>
+                </div>
 
-</div>
+                <div className="stat-card pending-card">
 
-            {/* Recent Tasks */}
+                    <h3>
+                        Pending
+                    </h3>
+
+                    <strong>
+                        {pendingTasks}
+                    </strong>
+
+                </div>
+
+                <div className="stat-card progress-card">
+
+                    <h3>
+                        In Progress
+                    </h3>
+
+                    <strong>
+                        {inProgressTasks}
+                    </strong>
+
+                </div>
+
+            </div>
 
             <div className="dashboard-section">
 
@@ -142,8 +203,7 @@ function Dashboard() {
                     <div className="task-list">
 
                         {tasks
-                            .slice(-5)
-                            .reverse()
+                            .slice(0, 5)
                             .map((task) => (
 
                                 <div
@@ -167,7 +227,10 @@ function Dashboard() {
                                     <span
                                         className={`status ${task.status
                                             .toLowerCase()
-                                            .replace(" ", "-")}`}
+                                            .replace(
+                                                " ",
+                                                "-"
+                                            )}`}
                                     >
                                         {task.status}
                                     </span>
