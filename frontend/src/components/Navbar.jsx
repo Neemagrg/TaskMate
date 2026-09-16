@@ -1,4 +1,3 @@
-```jsx
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
 
@@ -40,6 +39,7 @@ function Navbar() {
 
                     <NavLink
                         to="/"
+                        end
                         className={({ isActive }) =>
                             isActive ? "active-nav" : ""
                         }
@@ -49,6 +49,7 @@ function Navbar() {
 
                     <NavLink
                         to="/tasks"
+                        end
                         className={({ isActive }) =>
                             isActive ? "active-nav" : ""
                         }
@@ -85,4 +86,4 @@ function Navbar() {
 }
 
 export default Navbar;
-```
+
