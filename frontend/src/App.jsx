@@ -1,4 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+    BrowserRouter,
+    Routes,
+    Route,
+    Navigate
+} from "react-router-dom";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -11,15 +16,22 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
+
     return (
         <BrowserRouter>
+
             <Routes>
 
-                {/* Public Pages */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route
+                    path="/login"
+                    element={<Login />}
+                />
 
-                {/* Protected Pages */}
+                <Route
+                    path="/register"
+                    element={<Register />}
+                />
+
                 <Route
                     path="/"
                     element={
@@ -60,13 +72,18 @@ function App() {
                     }
                 />
 
-                {/* Unknown URL */}
                 <Route
                     path="*"
-                    element={<Navigate to="/" />}
+                    element={
+                        <Navigate
+                            to="/"
+                            replace
+                        />
+                    }
                 />
 
             </Routes>
+
         </BrowserRouter>
     );
 }
