@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/api";
 
 function Login() {
+
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
@@ -10,6 +12,7 @@ function Login() {
     });
 
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setForm({
@@ -18,41 +21,49 @@ function Login() {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
+
         e.preventDefault();
+
         setError("");
+        setLoading(true);
 
-        // Get registered users
-        const users =
-            JSON.parse(localStorage.getItem("users")) || [];
+        try {
 
-        // Find matching user
-        const user = users.find(
-            (user) =>
-                user.email.toLowerCase() ===
-                    form.email.toLowerCase() &&
-                user.password === form.password
-        );
+            const response = await api.post(
+                "/login",
+                form
+            );
 
-        if (!user) {
-            setError("Incorrect email or password.");
-            return;
+            localStorage.setItem(
+                "token",
+                response.data.token
+            );
+
+            localStorage.setItem(
+                "currentUser",
+                JSON.stringify(response.data.user)
+            );
+
+            navigate("/");
+
+        } catch (error) {
+
+            if (error.response?.data?.message) {
+                setError(
+                    error.response.data.message
+                );
+            } else {
+                setError(
+                    "Unable to login. Please check the server."
+                );
+            }
+
+        } finally {
+
+            setLoading(false);
+
         }
-
-        // Save logged-in user
-        localStorage.setItem(
-            "currentUser",
-            JSON.stringify(user)
-        );
-
-        // Create a simple login token
-        localStorage.setItem(
-            "token",
-            "logged-in"
-        );
-
-        // Go to dashboard
-        navigate("/");
     };
 
     return (
@@ -97,8 +108,9 @@ function Login() {
                     <button
                         type="submit"
                         className="primary-btn"
+                        disabled={loading}
                     >
-                        Login
+                        {loading ? "Logging in..." : "Login"}
                     </button>
 
                 </form>
