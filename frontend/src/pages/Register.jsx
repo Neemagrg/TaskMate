@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/api";
 
 function Register() {
+
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
@@ -12,66 +14,67 @@ function Register() {
     });
 
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
+
         setForm({
             ...form,
             [e.target.name]: e.target.value,
         });
+
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
+
         e.preventDefault();
+
         setError("");
+        setLoading(true);
 
-        // Check password length
-        if (form.password.length < 8) {
-            setError("Password must be at least 8 characters.");
-            return;
+        try {
+
+            await api.post(
+                "/register",
+                form
+            );
+
+            alert(
+                "Registration successful! Please login."
+            );
+
+            navigate("/login");
+
+        } catch (error) {
+
+            if (
+                error.response?.data?.errors
+            ) {
+
+                const errors =
+                    error.response.data.errors;
+
+                const firstError =
+                    Object.values(errors)[0]?.[0];
+
+                setError(
+                    firstError ||
+                    "Registration failed."
+                );
+
+            } else {
+
+                setError(
+                    "Registration failed. Please try again."
+                );
+
+            }
+
+        } finally {
+
+            setLoading(false);
+
         }
-
-        // Check password confirmation
-        if (form.password !== form.password_confirmation) {
-            setError("Passwords do not match.");
-            return;
-        }
-
-        // Get existing users
-        const users =
-            JSON.parse(localStorage.getItem("users")) || [];
-
-        // Check if email already exists
-        const existingUser = users.find(
-            (user) =>
-                user.email.toLowerCase() ===
-                form.email.toLowerCase()
-        );
-
-        if (existingUser) {
-            setError("An account with this email already exists.");
-            return;
-        }
-
-        // Create new user
-        const newUser = {
-            id: Date.now(),
-            name: form.name,
-            email: form.email,
-            password: form.password,
-        };
-
-        // Save user
-        users.push(newUser);
-
-        localStorage.setItem(
-            "users",
-            JSON.stringify(users)
-        );
-
-        alert("Registration successful!");
-
-        // Go to login
-        navigate("/login");
     };
 
     return (
@@ -129,7 +132,9 @@ function Register() {
                     <input
                         type="password"
                         name="password_confirmation"
-                        value={form.password_confirmation}
+                        value={
+                            form.password_confirmation
+                        }
                         onChange={handleChange}
                         placeholder="Confirm your password"
                         required
@@ -138,8 +143,11 @@ function Register() {
                     <button
                         type="submit"
                         className="primary-btn"
+                        disabled={loading}
                     >
-                        Register
+                        {loading
+                            ? "Creating account..."
+                            : "Register"}
                     </button>
 
                 </form>
