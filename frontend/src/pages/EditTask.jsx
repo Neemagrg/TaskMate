@@ -3,16 +3,13 @@ import {
     useNavigate,
     useParams
 } from "react-router-dom";
+import api from "../api/api";
 
 function EditTask() {
 
     const { id } = useParams();
 
     const navigate = useNavigate();
-
-    const user = JSON.parse(
-        localStorage.getItem("currentUser")
-    );
 
     const [form, setForm] = useState({
         title: "",
@@ -26,92 +23,118 @@ function EditTask() {
     const [loading, setLoading] =
         useState(true);
 
+    const [saving, setSaving] =
+        useState(false);
+
     const [error, setError] =
         useState("");
 
     useEffect(() => {
 
-        const allTasks =
-            JSON.parse(
-                localStorage.getItem("tasks")
-            ) || [];
+        loadTask();
 
-        const task = allTasks.find(
-            (task) =>
-                task.id === Number(id) &&
-                task.userId === user?.id
-        );
+    }, [id]);
 
-        if (!task) {
+    const loadTask = async () => {
 
-            setError("Task not found.");
+        try {
+
+            const response =
+                await api.get(
+                    `/tasks/${id}`
+                );
+
+            const task =
+                response.data.task;
+
+            setForm({
+                title: task.title || "",
+                description:
+                    task.description || "",
+                category:
+                    task.category || "",
+                priority:
+                    task.priority || "Low",
+                status:
+                    task.status || "Pending",
+                due_date:
+                    task.due_date || "",
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            setError(
+                "Task not found or you do not have permission to edit it."
+            );
+
+        } finally {
 
             setLoading(false);
 
-            return;
         }
-
-        setForm({
-            title: task.title || "",
-            description:
-                task.description || "",
-            category:
-                task.category || "",
-            priority:
-                task.priority || "Low",
-            status:
-                task.status || "Pending",
-            due_date:
-                task.due_date || "",
-        });
-
-        setLoading(false);
-
-    }, [id]);
+    };
 
     const handleChange = (e) => {
 
         setForm({
             ...form,
-            [e.target.name]: e.target.value,
+            [e.target.name]:
+                e.target.value,
         });
 
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
 
         e.preventDefault();
 
-        const allTasks =
-            JSON.parse(
-                localStorage.getItem("tasks")
-            ) || [];
+        setError("");
 
-        const updatedTasks =
-            allTasks.map((task) => {
+        try {
 
-                if (
-                    task.id === Number(id) &&
-                    task.userId === user.id
-                ) {
+            setSaving(true);
 
-                    return {
-                        ...task,
-                        ...form,
-                    };
+            await api.put(
+                `/tasks/${id}`,
+                form
+            );
 
-                }
+            navigate("/tasks");
 
-                return task;
+        } catch (error) {
 
-            });
+            console.error(error);
 
-        localStorage.setItem(
-            "tasks",
-            JSON.stringify(updatedTasks)
-        );
+            if (
+                error.response?.data?.errors
+            ) {
 
-        navigate("/tasks");
+                const errors =
+                    error.response.data.errors;
+
+                const firstError =
+                    Object.values(errors)[0]?.[0];
+
+                setError(
+                    firstError ||
+                    "Unable to update task."
+                );
+
+            } else {
+
+                setError(
+                    "Unable to update task."
+                );
+
+            }
+
+        } finally {
+
+            setSaving(false);
+
+        }
     };
 
     if (loading) {
@@ -127,7 +150,7 @@ function EditTask() {
         );
     }
 
-    if (error) {
+    if (error && !form.title) {
 
         return (
             <div className="page-container">
@@ -148,6 +171,12 @@ function EditTask() {
                 <h1>
                     Edit Task
                 </h1>
+
+                {error && (
+                    <div className="error">
+                        {error}
+                    </div>
+                )}
 
                 <form
                     onSubmit={handleSubmit}
@@ -252,8 +281,11 @@ function EditTask() {
                         <button
                             type="submit"
                             className="primary-btn"
+                            disabled={saving}
                         >
-                            Update Task
+                            {saving
+                                ? "Updating..."
+                                : "Update Task"}
                         </button>
 
                         <button
