@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../api/api";
 
 function Tasks() {
 
@@ -11,27 +12,45 @@ function Tasks() {
     const [statusFilter, setStatusFilter] =
         useState("All");
 
-    const user = JSON.parse(
-        localStorage.getItem("currentUser")
-    );
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
 
     useEffect(() => {
         loadTasks();
     }, []);
 
-    const loadTasks = () => {
+    const loadTasks = async () => {
 
-        const allTasks =
-            JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
 
-        const userTasks = allTasks.filter(
-            (task) => task.userId === user?.id
-        );
+            setLoading(true);
 
-        setTasks(userTasks);
+            const response =
+                await api.get("/tasks");
+
+            setTasks(
+                response.data.tasks
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            setError(
+                "Unable to load tasks."
+            );
+
+        } finally {
+
+            setLoading(false);
+
+        }
     };
 
-    const deleteTask = (id) => {
+    const deleteTask = async (id) => {
 
         const confirmDelete =
             window.confirm(
@@ -42,39 +61,58 @@ function Tasks() {
             return;
         }
 
-        const allTasks =
-            JSON.parse(localStorage.getItem("tasks")) || [];
+        try {
 
-        const updatedTasks = allTasks.filter(
-            (task) => task.id !== id
-        );
+            await api.delete(
+                `/tasks/${id}`
+            );
 
-        localStorage.setItem(
-            "tasks",
-            JSON.stringify(updatedTasks)
-        );
+            setTasks(
+                tasks.filter(
+                    (task) => task.id !== id
+                )
+            );
 
-        loadTasks();
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Unable to delete task."
+            );
+
+        }
     };
 
-    const filteredTasks = tasks.filter((task) => {
+    const filteredTasks =
+        tasks.filter((task) => {
 
-        const matchesSearch =
-            task.title
-                .toLowerCase()
-                .includes(
-                    search.toLowerCase()
-                );
+            const matchesSearch =
+                task.title
+                    .toLowerCase()
+                    .includes(
+                        search.toLowerCase()
+                    );
 
-        const matchesStatus =
-            statusFilter === "All" ||
-            task.status === statusFilter;
+            const matchesStatus =
+                statusFilter === "All" ||
+                task.status === statusFilter;
+
+            return (
+                matchesSearch &&
+                matchesStatus
+            );
+        });
+
+    if (loading) {
 
         return (
-            matchesSearch &&
-            matchesStatus
+            <div className="page-container">
+                <h2>Loading tasks...</h2>
+            </div>
         );
-    });
+
+    }
 
     return (
         <div className="page-container">
@@ -82,6 +120,7 @@ function Tasks() {
             <div className="page-header">
 
                 <div>
+
                     <h1>
                         My Tasks
                     </h1>
@@ -89,6 +128,7 @@ function Tasks() {
                     <p>
                         Manage all your tasks.
                     </p>
+
                 </div>
 
                 <Link
@@ -100,7 +140,11 @@ function Tasks() {
 
             </div>
 
-            {/* Search and Filter */}
+            {error && (
+                <div className="error">
+                    {error}
+                </div>
+            )}
 
             <div className="filters">
 
@@ -142,8 +186,6 @@ function Tasks() {
 
             </div>
 
-            {/* Task List */}
-
             {filteredTasks.length === 0 ? (
 
                 <div className="empty">
@@ -162,83 +204,88 @@ function Tasks() {
 
                 <div className="task-grid">
 
-                    {filteredTasks.map((task) => (
+                    {filteredTasks.map(
+                        (task) => (
 
-                        <div
-                            className="task-card"
-                            key={task.id}
-                        >
+                            <div
+                                className="task-card"
+                                key={task.id}
+                            >
 
-                            <div className="task-card-header">
+                                <div className="task-card-header">
 
-                                <h2>
-                                    {task.title}
-                                </h2>
+                                    <h2>
+                                        {task.title}
+                                    </h2>
+
+                                    <span
+                                        className={`priority ${task.priority.toLowerCase()}`}
+                                    >
+                                        {task.priority}
+                                    </span>
+
+                                </div>
+
+                                <p className="description">
+
+                                    {task.description ||
+                                        "No description"}
+
+                                </p>
+
+                                <div className="task-info">
+
+                                    <span>
+                                        Category:{" "}
+                                        {task.category ||
+                                            "None"}
+                                    </span>
+
+                                    <span>
+                                        Due:{" "}
+                                        {task.due_date ||
+                                            "No date"}
+                                    </span>
+
+                                </div>
 
                                 <span
-                                    className={`priority ${task.priority.toLowerCase()}`}
+                                    className={`status ${task.status
+                                        .toLowerCase()
+                                        .replace(
+                                            " ",
+                                            "-"
+                                        )}`}
                                 >
-                                    {task.priority}
+                                    {task.status}
                                 </span>
+
+                                <div className="task-actions">
+
+                                    <Link
+                                        to={`/tasks/edit/${task.id}`}
+                                        className="edit-btn"
+                                    >
+                                        Edit
+                                    </Link>
+
+                                    <button
+                                        onClick={() =>
+                                            deleteTask(
+                                                task.id
+                                            )
+                                        }
+                                        className="delete-btn"
+                                    >
+                                        Delete
+                                    </button>
+
+                                </div>
 
                             </div>
 
-                            <p className="description">
-
-                                {task.description ||
-                                    "No description"}
-
-                            </p>
-
-                            <div className="task-info">
-
-                                <span>
-                                    Category:{" "}
-                                    {task.category ||
-                                        "None"}
-                                </span>
-
-                                <span>
-                                    Due:{" "}
-                                    {task.due_date ||
-                                        "No date"}
-                                </span>
-
-                            </div>
-
-                            <span
-                                className={`status ${task.status
-                                    .toLowerCase()
-                                    .replace(" ", "-")}`}
-                            >
-                                {task.status}
-                            </span>
-
-                            <div className="task-actions">
-
-                                <Link
-                                    to={`/tasks/edit/${task.id}`}
-                                    className="edit-btn"
-                                >
-                                    Edit
-                                </Link>
-
-                                <button
-                                    onClick={() =>
-                                        deleteTask(
-                                            task.id
-                                        )
-                                    }
-                                    className="delete-btn"
-                                >
-                                    Delete
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    ))}
+                        )
+                    )}
 
                 </div>
 
