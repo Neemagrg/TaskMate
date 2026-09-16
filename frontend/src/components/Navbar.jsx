@@ -32,7 +32,7 @@ function Navbar() {
                     to="/"
                     className="logo"
                 >
-                    Task Manager
+                    TaskMate
                 </Link>
 
                 <div className="nav-links">
